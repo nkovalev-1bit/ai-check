@@ -124,6 +124,8 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
   -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%); mask-image: linear-gradient(to bottom, #000 82%, transparent 100%); }
 .pose.on { opacity: 1; }
 .goose { overflow: hidden; }
+.poke { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 3px 9px; border-radius: 999px; background: var(--pink); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); animation: pokepulse 2.4s ease-in-out infinite; }
+@keyframes pokepulse { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
 .bubble { align-self: center; margin-bottom: 12px; position: relative; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .bubble::before { content: ""; position: absolute; left: -7px; top: 26px; width: 12px; height: 12px; background: var(--surface-2); border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: rotate(45deg); }
 .bubble b { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
@@ -145,7 +147,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
 .g-low .goose-art.react { animation: shake .9s ease-in-out 2, idle 3.2s ease-in-out 1.8s infinite; }
 .g-high .spark { animation: twinkle 1.6s ease-in-out infinite; } .g-high .spark.s2 { animation-delay: .5s; } .g-high .spark.s3 { animation-delay: 1s; }
 @media (max-width: 420px) { .goose { grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 12px 12px 0; } .goose-art { width: 104px; } }
-@media (prefers-reduced-motion: reduce) { .pose { transition: none; } .goose-art, .goose-art.react, .spark { animation: none !important; } .g-high .spark { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .poke { animation: none; } .pose { transition: none; } .goose-art, .goose-art.react, .spark { animation: none !important; } .g-high .spark { opacity: 1; } }
 @media (max-width: 420px) { .dim { grid-template-columns: 84px minmax(0, 1fr) 40px; } }
 @media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
 </style>
@@ -583,11 +585,15 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     lines.push(`${B("Слабее всего:")} ${DIMS[weak]}`);
     dimKeys.forEach(d => {
       lines.push("");
-      lines.push(B(`${DIMS[d].toUpperCase()} ${r.dims[d].got}/${r.dims[d].max}`));
+      lines.push(`▪️ ${B(`${DIMS[d].toUpperCase()} ${r.dims[d].got}/${r.dims[d].max}`)}`);
       r.dims[d].items.forEach(it => { lines.push(`${mark(it.o[1])} ${B(it.q.text)}`); lines.push(it.o[0]); });
     });
     lines.push("");
     lines.push("Хочу обсудить результат.");
+    if (fmt === "tg") {
+      // Telegram collapses single line breaks when it parses **bold** on paste, so every line becomes its own paragraph
+      return lines.filter(l => l !== "").join("\n\n");
+    }
     return lines.join("\n");
   }
 
@@ -604,6 +610,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
         <img class="pose pose-idle on" src="${GOOSE.idle}" alt="" width="300" height="450">
         <img class="pose pose-react" src="${GOOSE[{high: "happy", mid: "think", low: "doubt"}[r.lvl]]}" alt="Гусь PIX" width="300" height="450">
         <i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i>
+        <span class="poke">жмякни меня</span>
       </button>
       <div class="bubble"><b>${esc(t[0])}</b><span>${esc(t[1])}</span><em class="meme" id="meme"></em></div>
     </div>`;
