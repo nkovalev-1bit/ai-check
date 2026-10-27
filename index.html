@@ -558,14 +558,37 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     return { total, max, dims, lvl, level: LV[lvl][0], cls: LV[lvl][1], summary: LV[lvl][2] };
   }
 
-  function messageText(r) {
+  const SHORT = {
+    c1: "Основная 1С", c2: "Базы и связи", c3: "Справочники", c4: "Своевременность ввода", c5: "Управленческие отчёты",
+    c6: "Регламенты", c7: "Безопасность и ИИ",
+    o1: "Как получает цифры", o2: "Задача для ИИ", o3: "Кто ведёт проект",
+    f1: "Закрытие месяца", f2: "Упр. и бух. цифры", f3: "Статусы оплат",
+    i1: "Платформа и обновления", i2: "Режим работы и HTTP", i3: "Права доступа",
+    l1: "Участок в 1С", l2: "Как получают данные", l3: "Кто работает в 1С"
+  };
+
+  function messageText(r, fmt) {
+    const B = t => fmt === "tg" ? `**${t}**` : `*${t}*`;
     const who = [state.person, state.firm].filter(Boolean).join(", ");
-    return `Николай, добрый день! Прошёл проверку «Готова ли 1С к ИИ».\n` +
-      (who ? `${who}\n` : "") +
-      `Роль: ${nameOf(ROLES, state.role)}\nОтрасль: ${nameOf(INDUSTRIES, state.industry)}\n` +
-      `Результат: ${r.total} из ${r.max} (${r.level})\n` +
-      Object.keys(DIMS).filter(d => r.dims[d].max).map(d => `${DIMS[d]}: ${r.dims[d].got}/${r.dims[d].max}`).join(", ") +
-      `\nХочу обсудить результат.`;
+    const mark = p => p === 3 ? "🟢" : p === 2 ? "🟡" : "🔴";
+    const dimKeys = Object.keys(DIMS).filter(d => r.dims[d].max);
+    const weak = dimKeys.slice().sort((a, b) => r.dims[a].got / r.dims[a].max - r.dims[b].got / r.dims[b].max)[0];
+    const lines = [];
+    lines.push(B("Николай, добрый день! Прошёл проверку «Готова ли 1С к ИИ»."));
+    if (who) lines.push(who);
+    lines.push("");
+    lines.push(`${B("Роль:")} ${nameOf(ROLES, state.role)}`);
+    lines.push(`${B("Отрасль:")} ${nameOf(INDUSTRIES, state.industry)}`);
+    lines.push(`${B("Итог:")} ${r.total} из ${r.max}, ${r.level}`);
+    lines.push(`${B("Слабее всего:")} ${DIMS[weak]}`);
+    dimKeys.forEach(d => {
+      lines.push("");
+      lines.push(B(`${DIMS[d].toUpperCase()} ${r.dims[d].got}/${r.dims[d].max}`));
+      r.dims[d].items.forEach(it => { lines.push(`${mark(it.o[1])} ${B(it.q.text)}`); lines.push(it.o[0]); });
+    });
+    lines.push("");
+    lines.push("Хочу обсудить результат.");
+    return lines.join("\n");
   }
 
   function gooseBlock(r, ordered) {
@@ -666,13 +689,13 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     goose.onclick = react;
     react();
     const wa = app.querySelector("#wa");
-    const setWa = () => { wa.href = `https://wa.me/${CONTACT.wa}?text=${encodeURIComponent(messageText(r))}`; };
+    const setWa = () => { wa.href = `https://wa.me/${CONTACT.wa}?text=${encodeURIComponent(messageText(r, "wa"))}`; };
     setWa();
     app.querySelector("#f-person").oninput = e => { state.person = e.target.value.trim(); setWa(); };
     app.querySelector("#f-firm").oninput = e => { state.firm = e.target.value.trim(); setWa(); };
     const status = app.querySelector("#status");
-    app.querySelector("#tg").addEventListener("click", () => copy(messageText(r), "Текст скопирован. Вставьте его в чат Telegram."));
-    app.querySelector("#copy").onclick = () => copy(messageText(r), "Скопировано.");
+    app.querySelector("#tg").addEventListener("click", () => copy(messageText(r, "tg"), "Текст скопирован. Вставьте его в чат Telegram."));
+    app.querySelector("#copy").onclick = () => copy(messageText(r, "tg"), "Скопировано.");
     app.querySelector("#again").onclick = () => { state.answers = {}; state.i = 0; state.step = "intro"; render(); };
 
     function copy(text, ok) {
